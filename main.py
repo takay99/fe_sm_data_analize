@@ -1,23 +1,38 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import all_plot
+import all_plot_bool
 from matplotlib.widgets import CheckButtons
 
 
 def main():
     print("Hello from fe-sm-data-analize!")
     # df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    output_data = pd.read_csv('LOG00281.txt',header=None, delim_whitespace=False)
+    output_data = pd.read_csv("LOG00281.txt", header=None, delim_whitespace=False)
 
     # print(output_data.iloc[0,:])
-    output_data = output_data.iloc[:,0:14]
-    output_data = output_data.dropna(how='any')
-    output_data.columns = ['tim', 'acc x r', 'acc y r', 'gyr z r', 'acc x f', 'acc y f', 'gyr z r', 'm_acc 1', 'm_acc 2',  'm vel 1', 'm vel 2', 'str' ,'currenrt1','currenrt2']
-    output_data['tim'] = output_data['tim'] - output_data['tim'].iloc[0]
+    output_data = output_data.iloc[:, 0:14]
+    output_data = output_data.dropna(how="any")
+    output_data.columns = [
+        "tim",
+        "acc x r",
+        "acc y r",
+        "gyr z r",
+        "acc x f",
+        "acc y f",
+        "gyr z r",
+        "m_acc 1",
+        "m_acc 2",
+        "m vel 1",
+        "m vel 2",
+        "str",
+        "currenrt1",
+        "currenrt2",
+    ]
+    output_data["tim"] = output_data["tim"] - output_data["tim"].iloc[0]
     print(output_data)
 
-    all_plot.all_plot(output_data)
+    all_plot_bool.all_plot_bool(output_data)
     print("end")
     # time = output_data.iloc[:, 0] / 1000
 
@@ -25,13 +40,13 @@ def main():
     # plt.figure(figsize=(10, 6))
 
     # # 最初のプロット: poly_acc_1
-  
+
     # plt.plot(time, output_data.iloc[:, 1], label='output_data column 1') # output_data(:,3)
     # # 後続のプロット
-    
+
     # plt.plot(time, output_data.iloc[:, 2], label='output_data column 2') # output_data(:,3)
     # plt.plot(time, output_data.iloc[:, 3], label='output_data column 4') # output_data(:,4)
-    
+
     # plt.plot(time, output_data.iloc[:, 4], label='output_data column 3') # output_data(:,3)
     # plt.plot(time, output_data.iloc[:, 5], label='output_data column 6') # output_data(:,6)
     # plt.plot(time, output_data.iloc[:, 6], label='output_data column 7') # output_data(:,7)
@@ -51,18 +66,20 @@ def main():
     # plt.legend()
     # plt.show()
 
+
 def main():
     print("Hello from fe-sm-data-analize!")
     # df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    df = pd.read_csv('LOG00281.txt',header=None, delim_whitespace=False)
+    df = pd.read_csv("LOG00281.txt", header=None, delim_whitespace=False)
 
     print(df)
-    print(df.iloc[0,:])
-    df = df.iloc[:,0:14]
-    df = df.dropna(how='any')
+    print(df.iloc[0, :])
+    df = df.iloc[:, 0:14]
+    df = df.dropna(how="any")
     # df.columns = ['新しい列名1', '新しい列名2', ...]
     print(df)
-    all_plot.all_plot(df)
+    all_plot_bool.all_plot_bool(df)
+
 
 if __name__ == "__main__":
     main()
