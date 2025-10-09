@@ -6,6 +6,7 @@ from matplotlib.widgets import CheckButtons
 def all_plot_bool(output_data):
     time = output_data.iloc[:, 0] / 1000
 
+
     # グラフウィンドウの作成
     plt.figure(figsize=(10, 6))
 
