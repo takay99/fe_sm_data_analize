@@ -3,83 +3,56 @@ import matplotlib.pyplot as plt
 import numpy as np
 import all_plot_bool
 from matplotlib.widgets import CheckButtons
+import lowpassfilter
 
 
 def main():
     print("Hello from fe-sm-data-analize!")
-    # df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    output_data = pd.read_csv("LOG00281.txt", header=None, delim_whitespace=False)
-
-    # print(output_data.iloc[0,:])
-    output_data = output_data.iloc[:, 0:14]
-    output_data = output_data.dropna(how="any")
-    output_data.columns = [
-        "tim",
-        "acc x r",
-        "acc y r",
-        "gyr z r",
-        "acc x f",
-        "acc y f",
-        "gyr z r",
-        "m_acc 1",
-        "m_acc 2",
-        "m vel 1",
-        "m vel 2",
-        "str",
-        "currenrt1",
-        "currenrt2",
-    ]
-    output_data["tim"] = output_data["tim"] - output_data["tim"].iloc[0]
+    # output_data = pd.read_csv(
+    #     "LOG00289.txt", header=None, delim_whitespace=False, error_bad_lines=False
+    # )
+    output_data = pd.read_csv(
+        "LOG00289.txt",
+        header=None,
+        delim_whitespace=False,
+        # 古い引数の代わりに新しい引数を使う
+        on_bad_lines="skip",
+        # error_bad_lines=False  <- これは削除する
+    )
     print(output_data)
 
+    for col in output_data.columns:
+        output_data[col] = pd.to_numeric(output_data[col], errors="coerce")
+
+    # 時間軸（最初の列）に NaN がある行を削除する
+    # 他のデータ列に NaN が残ってもプロットは可能ですが、時間軸は連続している必要があるため
+    output_data = output_data.dropna(subset=[0]).reset_index(drop=True)
+
+    # -----------
+
+    output_data.iloc[:, 1] = lowpassfilter.lowpass_filter(
+        output_data.iloc[:, 1], 1, 0.01
+    )
+    output_data.iloc[:, 2] = lowpassfilter.lowpass_filter(
+        output_data.iloc[:, 2], 1, 0.01
+    )
+    output_data.iloc[:, 4] = lowpassfilter.lowpass_filter(
+        output_data.iloc[:, 4], 1, 0.01
+    )
+    output_data.iloc[:, 5] = lowpassfilter.lowpass_filter(
+        output_data.iloc[:, 5], 1, 0.01
+    )
+
     all_plot_bool.all_plot_bool(output_data)
-    print("end")
+    figure, ax = plt.subplots()
     # time = output_data.iloc[:, 0] / 1000
-
-    # # グラフウィンドウの作成
-    # plt.figure(figsize=(10, 6))
-
-    # # 最初のプロット: poly_acc_1
-
-    # plt.plot(time, output_data.iloc[:, 1], label='output_data column 1') # output_data(:,3)
-    # # 後続のプロット
-
-    # plt.plot(time, output_data.iloc[:, 2], label='output_data column 2') # output_data(:,3)
-    # plt.plot(time, output_data.iloc[:, 3], label='output_data column 4') # output_data(:,4)
-
-    # plt.plot(time, output_data.iloc[:, 4], label='output_data column 3') # output_data(:,3)
-    # plt.plot(time, output_data.iloc[:, 5], label='output_data column 6') # output_data(:,6)
-    # plt.plot(time, output_data.iloc[:, 6], label='output_data column 7') # output_data(:,7)
-    # plt.plot(time, output_data.iloc[:, 7], label='output_data column 8') # output_data(:,8)
-    # plt.plot(time, -output_data.iloc[:, 8], label='-output_data column 9') # -output_data(:,9)
-    # plt.plot(time, -output_data.iloc[:, 9], label='-output_data column 10') # -output_data(:,10)
-    # plt.plot(time, output_data.iloc[:, 10], label='output_data column 11') # output_data(:,11)
-    # plt.plot(time, output_data.iloc[:, 11], label='output_data column 12') # output_data(:,12)
-    # plt.plot(time, -output_data.iloc[:, 12] / 100, label='-output_data column 13/100') # -output_data(:,13)/100
-    # plt.plot(time, output_data.iloc[:, 13] / 100, label='output_data column 14/100') # output_data(:,14)/100
-
-    # # グリッドの表示
-    # plt.grid(True)
-    # plt.xlabel('Time (s)')
-    # plt.ylabel('Value')
-    # plt.title('Data Plot')
-    # plt.legend()
+    # ax.plot(time, output_data.iloc[:, 2], label="acc x r")
+    # ax.plot(time, lowpass_acc_x_r, label="lowpass acc x r")
+    # ax.legend()
     # plt.show()
-
-
-def main():
-    print("Hello from fe-sm-data-analize!")
-    # df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    df = pd.read_csv("LOG00281.txt", header=None, delim_whitespace=False)
-
-    print(df)
-    print(df.iloc[0, :])
-    df = df.iloc[:, 0:14]
-    df = df.dropna(how="any")
-    # df.columns = ['新しい列名1', '新しい列名2', ...]
-    print(df)
-    all_plot_bool.all_plot_bool(df)
+    print("end")
 
 
 if __name__ == "__main__":
+
     main()
