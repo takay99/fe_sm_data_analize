@@ -2,6 +2,9 @@ import lowpassfilter
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import all_plot_bool
+import math
+
 
 def main():
 
@@ -20,7 +23,7 @@ def main():
     # 他のデータ列に NaN が残ってもプロットは可能ですが、時間軸は連続している必要があるため
     output_data = output_data.dropna(subset=[0]).reset_index(drop=True)
 
-     # -----------
+    # -----------
 
     output_data.iloc[:, 1] = lowpassfilter.lowpass_filter(
         output_data.iloc[:, 1], 1, 0.01
@@ -34,23 +37,137 @@ def main():
     output_data.iloc[:, 5] = lowpassfilter.lowpass_filter(
         output_data.iloc[:, 5], 1, 0.01
     )
-    slipangle(output_data)
+    slip_angle_plot = slipangle(output_data)
+    fig_all, ax_all = all_plot_bool.all_plot_bool(output_data)
+    plt.show()
+
 
 def slipangle(output_data_):
     time_s = output_data_.iloc[:, 0] / 1000
-    rad_vel_ave = lowpassfilter.lowpass_filter((output_data_.iloc[:, 3] + output_data_.iloc[:, 6]) / 2, 1, 0.01)
+    rad_vel_ave = lowpassfilter.lowpass_filter(
+        (output_data_.iloc[:, 3] + output_data_.iloc[:, 6]) / 2, 1, 0.01
+    )
     rad_acc_ave = np.gradient(rad_vel_ave, time_s)
     filtered_rad_acc = lowpassfilter.lowpass_filter(rad_acc_ave, 1, 0.01)
-    plt.figure(1)
-    plt.plot(time_s, filtered_rad_acc, label='Filtered Radial Acceleration')
-    plt.plot(time_s, rad_acc_ave, label='Raw Radial Acceleration', alpha=0.5)
-    plt.grid(True)
-    plt.xlabel('Time (s)')
-    plt.ylabel('Radial Acceleration')
+
+    acc_f_outradacc = output_data_.iloc[:, 4] - rad_acc_ave * (0.23 / 2)
+    acc_r_outradacc = output_data_.iloc[:, 1] + rad_acc_ave * (0.23 / 2)
+
+    acc_f = np.hypot(acc_f_outradacc, output_data_.iloc[:, 5])
+    acc_r = np.hypot(acc_r_outradacc, output_data_.iloc[:, 2])
+
+    radius_f = acc_f / np.hypot(rad_vel_ave**2, rad_acc_ave)
+    radius_r = acc_r / np.hypot(rad_vel_ave**2, rad_acc_ave)
+
+    array_radius_f = lowpassfilter.lowpass_filter(pd.Series(radius_f), 1, 0.01)
+    array_radius_r = lowpassfilter.lowpass_filter(pd.Series(radius_r), 1, 0.01)
+    array_rad_vel = pd.Series(rad_vel_ave)
+
+    mask = np.abs(array_rad_vel) > 0.1
+    array_radius_f = array_radius_f[mask]
+    array_radius_r = array_radius_r[mask]
+
+    # array_radius_f = conditionally_flip_sign(array_rad_vel, array_radius_f)
+    # array_radius_r = conditionally_flip_sign(array_rad_vel, array_radius_r)
+
+    result = calc_af_ar_series(array_radius_f, array_radius_r)
+    front_slip = np.arctan(result.iloc[:, 1] / result.iloc[:, 0])
+    rear_slip = np.arctan(result.iloc[:, 3] / result.iloc[:, 2])
+
+    fig_1, ax_1 = plt.subplots()
+    ax_1.plot(time_s[mask], array_radius_f, label="Filtered Rsadial Acceleration")
+    ax_1.plot(time_s[mask], array_radius_r, label="Raw Radial Acceleration", alpha=0.5)
+    ax_1.grid(True)
+    ax_1.set_xlabel("Time (s)")
+    ax_1.set_ylabel("Radial Acceleration")
+
+    fig_2, ax_2 = plt.subplots()
+    # plt.figure(1)
+    ax_2.plot(time_s[mask], front_slip, label="Filtered Radial Acceleration")
+    ax_2.plot(time_s[mask], rear_slip, label="Raw Radial Acceleration", alpha=0.5)
+    # ax_2.plot(
+    #     time_s[mask], result.iloc[:, 2], label="Raw Radial Acceleration", alpha=0.5
+    # )
+    # ax_2.plot(
+    #     time_s[mask], result.iloc[:, 3], label="Raw Radial Acceleration", alpha=0.5
+    # )
+    ax_2.grid(True)
+    ax_2.set_xlabel("Time (s)")
+
+    fig_3, ax_3 = plt.subplots()
+    ax_3.plot(
+        time_s[mask], result.iloc[:, 2], label="Raw Radial Acceleration", alpha=0.5
+    )
+    ax_3.plot(
+        time_s[mask], result.iloc[:, 3], label="Raw Radial Acceleration", alpha=0.5
+    )
+    ax_3.plot(
+        time_s[mask], result.iloc[:, 0], label="Raw Radial Acceleration", alpha=0.5
+    )
+    ax_3.plot(
+        time_s[mask], result.iloc[:, 1], label="Raw Radial Acceleration", alpha=0.5
+    )
+    ax_3.grid(True)
+    ax_3.set_xlabel("Time (s)")
+
+    return (
+        (fig_1, ax_1),
+        (fig_2, ax_2),
+        (fig_3, ax_3),
+    )
+
+    # plt.show()
 
 
+def conditionally_flip_sign(eval_array, target_array):
+    """
+    評価配列の値が負の場合、操作対象配列の対応する要素の符号を反転させる関数。
 
-    plt.show()
+    Args:
+        eval_array (np.ndarray): 正負を判断するための配列。
+        target_array (np.ndarray): 符号を変更する操作対象の配列。
+
+    Returns:
+        np.ndarray: 符号が変更された後の操作対象配列。
+    """
+    # 1. マスクを作成: 評価配列が負である要素を True とする
+    # 例: eval_array = [ 1, -2,  3, -4] の場合、mask = [False, True, False, True]
+    mask_negative = eval_array < 0
+
+    # 2. 符号を変更する対象の要素（Trueの要素）のみ符号を反転させる
+    # 元の target_array[mask_negative] に -1 を掛ける
+    # ※ この操作は元の target_array を直接変更します
+    target_array[mask_negative] *= -1
+
+    # 変更後の配列を返す
+    return target_array
+
+
+def calc_af_ar_series(array_radius_f, array_radius_r):
+    """
+    array_radius_f, array_radius_r: 同じ長さの NumPy array または pandas.Series
+    戻り値: DataFrame(columns=["afx", "afy", "arx", "ary"])
+    """
+
+    r_f = np.asarray(array_radius_f)
+    r_r = np.asarray(array_radius_r)
+    d = 0.23  # 前後の距離差 [m]
+
+    # a_ry を計算
+    ary = (r_f**2 - r_r**2 - d**2) / (2 * d)
+
+    # sqrtの中身が負になる場合はNaN（実数解なし）
+    inside = r_r**2 - ary**2
+    inside[inside < 0] = np.nan
+
+    arx = np.sqrt(inside)
+    afx = arx
+    afy = ary + d
+
+    # DataFrameでまとめて返す
+    return pd.DataFrame({"afx": afx, "afy": afy, "arx": arx, "ary": ary})
+
+
 if __name__ == "__main__":
 
     main()

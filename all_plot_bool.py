@@ -57,4 +57,4 @@ def all_plot_bool(output_data):
 
     check.on_clicked(callback)
 
-    plt.show()
+    return fig, ax
