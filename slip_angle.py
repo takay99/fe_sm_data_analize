@@ -59,13 +59,17 @@ def slipangle(output_data_):
     radius_f = acc_f / np.hypot(rad_vel_ave**2, rad_acc_ave)
     radius_r = acc_r / np.hypot(rad_vel_ave**2, rad_acc_ave)
 
-    array_radius_f = lowpassfilter.lowpass_filter(pd.Series(radius_f), 1, 0.01)
-    array_radius_r = lowpassfilter.lowpass_filter(pd.Series(radius_r), 1, 0.01)
+    # array_radius_f = lowpassfilter.lowpass_filter(pd.Series(radius_f), 0.05, 0.01)
+    # array_radius_r = lowpassfilter.lowpass_filter(pd.Series(radius_r), 0.05, 0.01)
+    array_radius_f = pd.Series(radius_f)
+    array_radius_r = pd.Series(radius_r)
     array_rad_vel = pd.Series(rad_vel_ave)
 
-    mask = np.abs(array_rad_vel) > 0.1
+    mask = np.abs(array_rad_vel) > 0.3
     array_radius_f = array_radius_f[mask]
     array_radius_r = array_radius_r[mask]
+
+    print(mask)
 
     # array_radius_f = conditionally_flip_sign(array_rad_vel, array_radius_f)
     # array_radius_r = conditionally_flip_sign(array_rad_vel, array_radius_r)
@@ -73,6 +77,10 @@ def slipangle(output_data_):
     result = calc_af_ar_series(array_radius_f, array_radius_r)
     front_slip = np.arctan(result.iloc[:, 1] / result.iloc[:, 0])
     rear_slip = np.arctan(result.iloc[:, 3] / result.iloc[:, 2])
+
+    centripetal_acc_r =np.sign(array_rad_vel[mask])*array_radius_r* array_rad_vel[mask] ** 2 #- rad_acc_ave[mask] * (0.23 / 2)
+    lateral_friction_coeff_r = centripetal_acc_r / ((9.81/2) + ((2*0.045/0.23)) )
+    
 
     fig_1, ax_1 = plt.subplots()
     ax_1.plot(time_s[mask], array_radius_f, label="Filtered Rsadial Acceleration")
@@ -110,10 +118,17 @@ def slipangle(output_data_):
     ax_3.grid(True)
     ax_3.set_xlabel("Time (s)")
 
+    fig_4, ax_4 = plt.subplots()
+    ax_4.plot(rear_slip,lateral_friction_coeff_r,'o', label="Slip Angle vs Lateral Friction Coeff")
+    ax_4.grid(True)
+    ax_4.set_xlabel("Slip Angle (rad)")
+    ax_4.set_ylabel("Lateral Friction Coeff")   
+
     return (
         (fig_1, ax_1),
         (fig_2, ax_2),
         (fig_3, ax_3),
+        (fig_4, ax_4),
     )
 
     # plt.show()
