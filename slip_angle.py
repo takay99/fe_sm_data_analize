@@ -83,8 +83,8 @@ def slipangle(output_data_):
 
     fig_2, ax_2 = plt.subplots()
     # plt.figure(1)
-    ax_2.plot(time_s[mask], front_slip, label="Filtered Radial Acceleration")
-    ax_2.plot(time_s[mask], rear_slip, label="Raw Radial Acceleration", alpha=0.5)
+    ax_2.plot(time_s[mask], front_slip, "o", label="Filtered Radial Acceleration")
+    ax_2.plot(time_s[mask], rear_slip, "o", label="Raw Radial Acceleration", alpha=0.5)
     # ax_2.plot(
     #     time_s[mask], result.iloc[:, 2], label="Raw Radial Acceleration", alpha=0.5
     # )
