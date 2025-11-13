@@ -2,6 +2,7 @@ import numpy as np
 
 
 def lowpass_filter(data, cutoff_freq, T):
+    data = np.asarray(data)
     omega_c_T = cutoff_freq * 2 * np.pi * T
     alpha = omega_c_T / (1 + omega_c_T)
     D = 2 + cutoff_freq * T
