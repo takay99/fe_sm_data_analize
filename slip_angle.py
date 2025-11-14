@@ -10,7 +10,7 @@ import csv
 def main():
 
     output_data = pd.read_csv(
-        "LOG00289.txt",
+        "LOG00295.txt",
         header=None,
         delim_whitespace=False,
         # 古い引数の代わりに新しい引数を使う
@@ -210,7 +210,7 @@ def slipangle(output_data_):
 
     # 2. マスクの作成と適用 (インデックスのリセット)
     # 角速度が小さい（ほぼ停止している）データを除外
-    mask_series = np.abs(array_rad_vel) > 0.05
+    mask_series = np.abs(array_rad_vel) > 0.01
     # (A) 元々 pd.Series だった変数は、.reset_index() が必要
     time_s_masked = time_s[mask_series].reset_index(drop=True)
     array_rad_vel_masked = array_rad_vel[mask_series].reset_index(drop=True)
