@@ -290,9 +290,17 @@ def slipangle(output_data_):
     # front_slip = tangent_angle_front # （前輪は今回未使用）
 
     # 5. 横摩擦係数の計算
-    centripetal_acc_r = (
-        np.sign(array_rad_vel_masked) * array_radius_r_masked * array_rad_vel_masked**2
+    # rad_acc_ave は元データ長の配列なので、mask_np によってマスクして長さを揃える
+    rad_acc_masked = rad_acc_ave[mask_np]
+
+    centripetal_term = (
+        np.sign(array_rad_vel_masked)
+        * array_radius_r_masked
+        * (array_rad_vel_masked ** 2)
+        + rad_acc_masked * (0.23 / 2)
     )
+
+    centripetal_acc_r = lowpassfilter.lowpass_filter(centripetal_term, 1, 0.01)
     lateral_friction_coeff_r = centripetal_acc_r / ((9.81 / 2) + ((2 * 0.045 / 0.23)))
 
     # 6. プロット用データフレームの作成
@@ -342,6 +350,13 @@ def slipangle(output_data_):
     ax_2.plot(
         time_s[mask_np],
         rear_slip_2,
+        "o",
+        label="Rear Slip Angle",
+        alpha=0.5,
+    )
+    ax_2.plot(
+        time_s[mask_np],
+        lateral_friction_coeff_r,
         "o",
         label="Rear Slip Angle",
         alpha=0.5,
